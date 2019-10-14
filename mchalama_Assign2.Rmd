@@ -1,0 +1,117 @@
+---
+title: "R Notebook"
+output:
+  html_document:
+    df_print: paged
+---
+
+```{r}
+library(caret)
+library(ISLR)
+library(dplyr)
+library(ggplot2)
+library(FNN)
+library(class)
+library(gmodels)
+
+#Read the data
+UB = read.csv("UniversalBank.csv")
+head(UB)
+
+UB <- UB [,c(-1,-5)]#### excluding 2 coloumn form data "ID" and "Zip Code"
+
+
+str(UB)
+
+UB$Personal.Loan <- factor(UB$Personal.Loan)
+
+# Partition the data
+set.seed(123)
+
+training_index = createDataPartition(UB$Age, p = 0.6, list= FALSE)
+training_data = UB[training_index,]
+validation_data = UB[-training_index,]
+
+test_index = createDataPartition(validation_data$Age, p = 0.5,list = FALSE)
+test_data = UB[test_index,]
+
+# Normalize the data
+training_norm <- training_data[,-8]
+validation_norm <- validation_data[,-8]
+test_norm <-test_data[,-8]
+
+norm.values <- preProcess(training_norm,method=c("center", "scale"))
+training_norm<- predict(norm.values,training_norm)
+validation_norm<- predict(norm.values,validation_norm)
+test_norm<- predict(norm.values,test_norm)
+
+
+# KNN Modelling
+NearestValue <- knn(train = training_norm,test= test_norm, cl=training_data$Personal.Loan, k=1, prob = TRUE)
+
+
+accuracy.df <- data.frame(k = seq(1, 14, 1), accuracy = rep(0, 14))
+for(i in 1:14) {
+  knn.pred <- knn(training_norm, test_norm,  cl = training_data$Personal.Loan, k = i)
+  
+  
+  accuracy.df[i, 2] <- confusionMatrix(knn.pred,test_data$Personal.Loan)$overall[1] 
+}
+accuracy.df
+
+#Confusion Matrix
+CrossTable(x=test_data$Personal.Loan,y=NearestValue, prop.chisq = FALSE)
+
+##Adding new customer using rbind
+newRow <- data.frame(Age ="40", Experience = "10", Income = "84", Family = "2", CCAvg = "2", Education = "1", Mortgage = "0", Personal.Loan = "1", Securities.Account = "0" , CD.Account = "0" ,Online = "1", CreditCard = "1" )
+"UB"<- rbind(UB, newRow)
+
+## Repartition the data into training, validation, and test sets (50% : 30% : 20%)
+UB = read.csv("UniversalBank.csv")
+head(UB)
+
+UB2 <- UB [,c(-1,-5)]#### excluding 2 coloumn form data "ID" and "Zip Code"
+
+
+str(UB2)
+
+UB2$Personal.Loan <- factor(UB2$Personal.Loan)
+
+# Partition the data
+set.seed(123)
+
+training_index1 = createDataPartition(UB2$Age, p = 0.5, list= FALSE)
+training_data1 = UB2[training_index1,]
+validation_index1 = createDataPartition(UB2$Age, p = 0.3, list= FALSE)
+validation_data1 = UB2[validation_index1,]
+
+test_index1 = createDataPartition(UB2$Age, p = 0.2,list = FALSE)
+test_data1 = UB2[test_index1,]
+
+# Normalize the Repartitioned data
+training_norm1 <- training_data1[,-8]
+validation_norm1 <- validation_data1[,-8]
+test_norm1 <-test_data1[,-8]
+
+norm.values1 <- preProcess(training_norm1,method=c("center", "scale"))
+training_norm1<- predict(norm.values1,training_norm1)
+validation_norm1<- predict(norm.values1,validation_norm1)
+test_norm1<- predict(norm.values1,test_norm1)
+
+# KNN Modelling
+NearestValue1 <- knn(train = training_norm1,test= test_norm1, cl=training_data1$Personal.Loan, k=1, prob = TRUE)
+
+
+accuracy1.df <- data.frame(k = seq(1, 14, 1), accuracy = rep(0, 14))
+for(i in 1:14) {
+  knn.pred1 <- knn(training_norm1, test_norm1,  cl = training_data1$Personal.Loan, k = i)
+  
+  
+  accuracy1.df[i, 2] <- confusionMatrix(knn.pred1,test_data1$Personal.Loan)$overall[1] 
+}
+accuracy1.df
+
+#Confusion Matrix
+CrossTable(x=test_data1$Personal.Loan,y=NearestValue1, prop.chisq = FALSE)
+```
+
